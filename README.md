@@ -1,32 +1,38 @@
-# React + TypeScript + Vite
+# COCO Zeit
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Zeiterfassung für [COCO Munich](https://coco-munich.de) — Tapas & Bar, Barer Straße 68.
+Ersatz für Crewmeister, inkl. vollständig importierter Historie (Juli 2024 – Juli 2026).
 
-Currently, two official plugins are available:
+**Live:** https://coco-zeit.vercel.app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Erfassen** (alle): Ein-/Ausstempeln mit Live-Timer, Zeiten nachtragen, eigene Einträge bearbeiten, Monatsübersicht — optimiert für Handy und iPad.
+- **Zeiten** (Admin): Alle Einträge filtern (Person, Monat), anlegen, bearbeiten, löschen. Export als **Excel, CSV, PDF und JSON**.
+- **Insights** (Admin): Teamstunden, Schichten, Ø Schichtlänge, gerade Eingestempelte, Stunden pro Person, Wochentrend.
+- **Team** (Admin): Zugänge anlegen/löschen, Passwörter setzen, deaktivieren/reaktivieren (Historie bleibt erhalten).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Stack
 
-## Expanding the Oxlint configuration
+- Vite + React 19 + TypeScript
+- Tailwind CSS v4 + shadcn/ui, Design nach coco-munich.de (Playfair Display, DM Sans, `#2d5339`)
+- Supabase (Auth, Postgres mit Row Level Security, Edge Function `admin-users`)
+- Biome (Linter + Formatter), Recharts, SheetJS, jsPDF
+- Deployment: Vercel
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Entwicklung
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev      # lokal starten
+npm run lint     # Biome check
+npm run build    # Produktion bauen
+vercel deploy --prod --yes   # deployen
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Architektur
+
+- Login per Benutzername (intern `<name>@crew.coco-munich.de`) oder echter E-Mail.
+- `members` ist von `auth.users` entkoppelt: ehemalige Mitarbeiter:innen existieren ohne Login, ihre Zeiten bleiben auswertbar.
+- RLS: Mitglieder sehen/ändern nur eigene Einträge, Admins alles. Nutzerverwaltung läuft über die Edge Function mit Service-Role.
+- Ein offener Eintrag pro Person (partieller Unique-Index) verhindert doppeltes Einstempeln.
