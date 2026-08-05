@@ -1,1 +1,89 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+:root {
+  --background: #fbfaf9;
+  --foreground: #181b1a;
+  --card: #ffffff;
+  --card-foreground: #181b1a;
+  --popover: #ffffff;
+  --popover-foreground: #181b1a;
+  --primary: #2d5339;
+  --primary-foreground: #fbfaf9;
+  --secondary: #eeece8;
+  --secondary-foreground: #181b1a;
+  --muted: #efedea;
+  --muted-foreground: #5f6360;
+  --accent: #dfe9e2;
+  --accent-foreground: #264631;
+  --destructive: #a13d2d;
+  --destructive-foreground: #fbfaf9;
+  --border: #dddad5;
+  --input: #dddad5;
+  --ring: #2d5339;
+  --chart-1: #2d5339;
+  --chart-2: #679478;
+  --chart-3: #94b5a0;
+  --chart-4: #b08d3f;
+  --chart-5: #a8a29b;
+  --radius: 0.7rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-pine-50: #f2f6f3;
+  --color-pine-100: #dfe9e2;
+  --color-pine-200: #bed3c5;
+  --color-pine-300: #94b5a0;
+  --color-pine-400: #679478;
+  --color-pine-500: #47775a;
+  --color-pine-600: #2d5339;
+  --color-pine-700: #264631;
+  --color-pine-800: #1f3828;
+  --color-pine-900: #182b1f;
+  --color-cream: #fbfaf9;
+  --color-paper: #fdfbf7;
+  --color-sand: #eeece8;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", Georgia, serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    min-height: 100dvh;
+  }
+}

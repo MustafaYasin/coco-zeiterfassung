@@ -1,0 +1,284 @@
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import { EntryDialog } from "@/components/EntryDialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
+import { type ExportFormat, exportEntries } from "@/lib/export";
+import { supabase } from "@/lib/supabase";
+import {
+  fmtHours,
+  fmtTime,
+  monthLabel,
+  monthRange,
+  shiftMonth,
+  sumMinutes,
+  workedMinutes,
+} from "@/lib/time";
+import type { Member, TimeEntry } from "@/lib/types";
+
+const ALL = "alle";
+
+export function Entries() {
+  const { member: me } = useAuth();
+  const [members, setMembers] = useState<Member[]>([]);
+  const [filterMember, setFilterMember] = useState(ALL);
+  const [month, setMonth] = useState(() => new Date());
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<TimeEntry | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("members")
+      .select("*")
+      .order("display_name")
+      .then(({ data }) => setMembers((data as Member[]) ?? []));
+  }, []);
+
+  const load = useCallback(async () => {
+    const [start, end] = monthRange(month);
+    let query = supabase
+      .from("time_entries")
+      .select("*")
+      .gte("started_at", start)
+      .lt("started_at", end)
+      .order("started_at", { ascending: false });
+    if (filterMember !== ALL) query = query.eq("member_id", filterMember);
+    const { data } = await query;
+    setEntries((data as TimeEntry[]) ?? []);
+  }, [month, filterMember]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const memberMap = useMemo(
+    () => new Map(members.map((member) => [member.id, member])),
+    [members],
+  );
+  const activeMembers = useMemo(
+    () => members.filter((member) => member.active),
+    [members],
+  );
+  const total = sumMinutes(entries);
+
+  async function remove(entry: TimeEntry) {
+    if (!window.confirm("Diesen Eintrag wirklich löschen?")) return;
+    const { error } = await supabase
+      .from("time_entries")
+      .delete()
+      .eq("id", entry.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Eintrag gelöscht.");
+    load();
+  }
+
+  function doExport(fmt: ExportFormat) {
+    if (entries.length === 0) {
+      toast.error("Keine Einträge im gewählten Zeitraum.");
+      return;
+    }
+    const who =
+      filterMember === ALL
+        ? "team"
+        : (memberMap.get(filterMember)?.username ?? "mitarbeiter");
+    exportEntries(fmt, entries, memberMap, `${who}-${monthLabel(month)}`);
+  }
+
+  return (
+    <div className="grid gap-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="font-display text-2xl font-semibold">Zeiten</h1>
+        <Badge variant="secondary" className="text-sm">
+          {fmtHours(total)}
+        </Badge>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Select value={filterMember} onValueChange={setFilterMember}>
+            <SelectTrigger className="w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Alle Mitarbeiter:innen</SelectItem>
+              {members.map((member) => (
+                <SelectItem key={member.id} value={member.id}>
+                  {member.display_name}
+                  {member.active ? "" : " (ehemalig)"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMonth((current) => shiftMonth(current, -1))}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="min-w-32 text-center text-sm font-medium">
+              {monthLabel(month)}
+            </span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMonth((current) => shiftMonth(current, 1))}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="size-4" /> Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => doExport("xlsx")}>
+                Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => doExport("csv")}>
+                CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => doExport("pdf")}>
+                PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => doExport("json")}>
+                JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            size="sm"
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
+          >
+            <Plus className="size-4" /> Eintrag
+          </Button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-line bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Mitarbeiter:in</TableHead>
+              <TableHead>Datum</TableHead>
+              <TableHead>Von</TableHead>
+              <TableHead>Bis</TableHead>
+              <TableHead className="text-right">Pause</TableHead>
+              <TableHead className="text-right">Netto</TableHead>
+              <TableHead>Notiz</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {entries.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={8}
+                  className="py-10 text-center text-muted-foreground"
+                >
+                  Keine Einträge in diesem Monat.
+                </TableCell>
+              </TableRow>
+            )}
+            {entries.map((entry) => (
+              <TableRow key={entry.id}>
+                <TableCell className="font-medium">
+                  {memberMap.get(entry.member_id)?.display_name ?? "?"}
+                </TableCell>
+                <TableCell>
+                  {new Date(entry.started_at).toLocaleDateString("de-DE")}
+                </TableCell>
+                <TableCell>{fmtTime(entry.started_at)}</TableCell>
+                <TableCell>
+                  {entry.ended_at ? (
+                    fmtTime(entry.ended_at)
+                  ) : (
+                    <Badge className="bg-pine-600">läuft</Badge>
+                  )}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  {entry.break_minutes > 0 ? `${entry.break_minutes} min` : "–"}
+                </TableCell>
+                <TableCell className="text-right font-medium tabular-nums">
+                  {entry.ended_at ? fmtHours(workedMinutes(entry)) : "–"}
+                </TableCell>
+                <TableCell className="max-w-48 truncate text-muted-foreground">
+                  {entry.note}
+                </TableCell>
+                <TableCell className="text-right whitespace-nowrap">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setEditing(entry);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive"
+                    onClick={() => remove(entry)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <EntryDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        members={editing ? members : activeMembers}
+        defaultMemberId={me?.id ?? activeMembers[0]?.id ?? ""}
+        entry={editing}
+        onSaved={load}
+      />
+    </div>
+  );
+}
