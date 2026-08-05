@@ -13,7 +13,11 @@ export default function App() {
   if (loading) {
     return (
       <div className="flex min-h-dvh items-center justify-center">
-        <span className="font-display text-2xl text-pine-600">COCO</span>
+        <img
+          src="/brand/icon-green.svg"
+          alt="COCO Munich"
+          className="h-16 w-16 animate-pulse"
+        />
       </div>
     );
   }

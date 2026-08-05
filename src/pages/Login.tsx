@@ -28,10 +28,14 @@ export function Login() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-paper px-4">
-      <div className="mb-8 text-center">
-        <h1 className="font-display text-5xl font-bold text-pine-600">COCO</h1>
-        <p className="mt-1 text-sm tracking-[0.3em] text-muted-foreground uppercase">
-          Munich · Zeiterfassung
+      <div className="mb-8 flex flex-col items-center gap-3 text-center">
+        <img
+          src="/brand/logo-stacked-green.svg"
+          alt="COCO Munich"
+          className="h-36 w-auto"
+        />
+        <p className="text-sm tracking-[0.3em] text-muted-foreground uppercase">
+          Zeiterfassung
         </p>
       </div>
 

@@ -102,8 +102,15 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 border-b bg-cream/90 backdrop-blur">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-6 px-4">
-          <span className="font-display text-xl font-bold tracking-wide text-pine-600">
-            COCO <span className="font-normal italic">Zeit</span>
+          <span className="flex items-center gap-2">
+            <img
+              src="/brand/logo-horizontal-green.svg"
+              alt="COCO Munich"
+              className="h-7 w-auto"
+            />
+            <span className="font-display text-lg italic text-pine-600">
+              Zeit
+            </span>
           </span>
 
           {showNav && (
