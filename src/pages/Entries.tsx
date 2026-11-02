@@ -1,14 +1,9 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Download, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { EntryDialog } from "@/components/EntryDialog";
+import { MonthSwitcher } from "@/components/MonthSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,7 +35,6 @@ import {
   fmtTime,
   monthLabel,
   monthRange,
-  shiftMonth,
   sumMinutes,
   workedMinutes,
 } from "@/lib/time";
@@ -50,6 +44,7 @@ const ALL = "alle";
 
 export function Entries() {
   const { member: me } = useAuth();
+  const confirm = useConfirm();
   const [members, setMembers] = useState<Member[]>([]);
   const [filterMember, setFilterMember] = useState(ALL);
   const [month, setMonth] = useState(() => new Date());
@@ -93,7 +88,13 @@ export function Entries() {
   const total = sumMinutes(entries);
 
   async function remove(entry: TimeEntry) {
-    if (!window.confirm("Diesen Eintrag wirklich löschen?")) return;
+    const ok = await confirm({
+      title: "Eintrag löschen?",
+      description: `${memberMap.get(entry.member_id)?.display_name ?? "?"}, ${new Date(entry.started_at).toLocaleDateString("de-DE")}, ${fmtTime(entry.started_at)} bis ${entry.ended_at ? fmtTime(entry.ended_at) : "jetzt"} Uhr.`,
+      action: "Löschen",
+      destructive: true,
+    });
+    if (!ok) return;
     const { error } = await supabase
       .from("time_entries")
       .delete()
@@ -106,7 +107,7 @@ export function Entries() {
     load();
   }
 
-  function doExport(fmt: ExportFormat) {
+  async function doExport(fmt: ExportFormat) {
     if (entries.length === 0) {
       toast.error("Keine Einträge im gewählten Zeitraum.");
       return;
@@ -115,19 +116,32 @@ export function Entries() {
       filterMember === ALL
         ? "team"
         : (memberMap.get(filterMember)?.username ?? "mitarbeiter");
-    exportEntries(fmt, entries, memberMap, `${who}-${monthLabel(month)}`);
+    try {
+      await exportEntries(
+        fmt,
+        entries,
+        memberMap,
+        `${who}-${monthLabel(month)}`,
+      );
+    } catch (error) {
+      // Closing the share sheet without choosing a target is not an error.
+      if (error instanceof Error && /cancel/i.test(error.message)) return;
+      toast.error("Export hat nicht geklappt.");
+    }
   }
 
   return (
     <div className="grid gap-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="font-display text-2xl font-semibold">Zeiten</h1>
-        <Badge variant="secondary" className="text-sm">
-          {fmtHours(total)}
-        </Badge>
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
+        <div>
+          <h1 className="type-display text-4xl">Zeiten</h1>
+          <p className="mt-1 text-[15px] text-muted-foreground tabular">
+            {fmtHours(total)} im {monthLabel(month).split(" ")[0]}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 lg:ml-auto">
           <Select value={filterMember} onValueChange={setFilterMember}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -141,30 +155,12 @@ export function Entries() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMonth((current) => shiftMonth(current, -1))}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="min-w-32 text-center text-sm font-medium">
-              {monthLabel(month)}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMonth((current) => shiftMonth(current, 1))}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
+          <MonthSwitcher month={month} onChange={setMonth} />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Download className="size-4" /> Export
+              <Button variant="outline">
+                <Download className="size-[18px]" /> Export
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -184,22 +180,21 @@ export function Entries() {
           </DropdownMenu>
 
           <Button
-            size="sm"
             onClick={() => {
               setEditing(null);
               setDialogOpen(true);
             }}
           >
-            <Plus className="size-4" /> Eintrag
+            <Plus className="size-[18px]" /> Eintrag
           </Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-card">
+      <div className="overflow-x-auto rounded-2xl border border-line bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Mitarbeiter:in</TableHead>
+              <TableHead className="pl-5">Mitarbeiter:in</TableHead>
               <TableHead>Datum</TableHead>
               <TableHead>Von</TableHead>
               <TableHead>Bis</TableHead>
@@ -222,18 +217,20 @@ export function Entries() {
             )}
             {entries.map((entry) => (
               <TableRow key={entry.id}>
-                <TableCell className="font-medium">
+                <TableCell className="pl-5 font-medium">
                   {memberMap.get(entry.member_id)?.display_name ?? "?"}
                 </TableCell>
-                <TableCell>
+                <TableCell className="tabular">
                   {new Date(entry.started_at).toLocaleDateString("de-DE")}
                 </TableCell>
-                <TableCell>{fmtTime(entry.started_at)}</TableCell>
-                <TableCell>
+                <TableCell className="tabular">
+                  {fmtTime(entry.started_at)}
+                </TableCell>
+                <TableCell className="tabular">
                   {entry.ended_at ? (
                     fmtTime(entry.ended_at)
                   ) : (
-                    <Badge className="bg-pine-600">läuft</Badge>
+                    <Badge className="bg-mais-400 text-ink">läuft</Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-right tabular-nums">
@@ -249,20 +246,22 @@ export function Entries() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Bearbeiten"
                     onClick={() => {
                       setEditing(entry);
                       setDialogOpen(true);
                     }}
                   >
-                    <Pencil className="size-4" />
+                    <Pencil className="size-[18px]" />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-destructive"
+                    aria-label="Löschen"
+                    className="text-destructive hover:text-destructive"
                     onClick={() => remove(entry)}
                   >
-                    <Trash2 className="size-4" />
+                    <Trash2 className="size-[18px]" />
                   </Button>
                 </TableCell>
               </TableRow>
