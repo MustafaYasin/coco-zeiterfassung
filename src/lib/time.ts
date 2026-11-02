@@ -12,6 +12,23 @@ export function workedMinutes(entry: TimeEntry, now = new Date()): number {
   return Math.max(0, gross - entry.break_minutes);
 }
 
+/** Running clock of an open entry as [hours, "mm", "ss"], net of breaks. */
+export function elapsedParts(
+  entry: TimeEntry,
+  now = new Date(),
+): [number, string, string] {
+  const start = new Date(entry.started_at).getTime();
+  const seconds = Math.max(
+    0,
+    Math.floor((now.getTime() - start) / 1000) - entry.break_minutes * 60,
+  );
+  return [
+    Math.floor(seconds / 3600),
+    String(Math.floor(seconds / 60) % 60).padStart(2, "0"),
+    String(seconds % 60).padStart(2, "0"),
+  ];
+}
+
 export function sumMinutes(entries: TimeEntry[]): number {
   return entries
     .filter((entry) => entry.ended_at)
@@ -27,6 +44,17 @@ export function fmtHours(minutes: number): string {
 
 export function fmtDay(iso: string): string {
   return format(new Date(iso), "EEE, d. MMM yyyy", { locale: de });
+}
+
+/** "Dienstag, 27. Oktober" */
+export function fmtToday(date: Date): string {
+  return format(date, "EEEE, d. MMMM", { locale: de });
+}
+
+/** ["Di", "27.10."] for compact list rows. */
+export function fmtDayParts(iso: string): [string, string] {
+  const date = new Date(iso);
+  return [format(date, "EEE", { locale: de }), format(date, "d.M.")];
 }
 
 export function fmtTime(iso: string): string {

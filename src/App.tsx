@@ -12,9 +12,9 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
+      <div className="flex min-h-dvh items-center justify-center bg-mais-400">
         <img
-          src="/brand/icon-green.svg"
+          src="/brand/icon-ink.svg"
           alt="COCO Munich"
           className="h-16 w-16 animate-pulse"
         />

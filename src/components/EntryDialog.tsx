@@ -30,6 +30,8 @@ type Props = {
   defaultMemberId: string;
   entry: TimeEntry | null;
   onSaved: () => void;
+  /** Shows a delete button while editing (used on small screens). */
+  onDelete?: (entry: TimeEntry) => void;
 };
 
 export function EntryDialog({
@@ -39,6 +41,7 @@ export function EntryDialog({
   defaultMemberId,
   entry,
   onSaved,
+  onDelete,
 }: Props) {
   const [memberId, setMemberId] = useState(defaultMemberId);
   const [date, setDate] = useState("");
@@ -101,9 +104,9 @@ export function EntryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display">
+          <DialogTitle>
             {entry ? "Eintrag bearbeiten" : "Zeit nachtragen"}
           </DialogTitle>
         </DialogHeader>
@@ -137,7 +140,7 @@ export function EntryDialog({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="grid gap-2">
               <Label htmlFor="entry-from">Von</Label>
               <Input
@@ -156,7 +159,7 @@ export function EntryDialog({
                 onChange={(event) => setTo(event.target.value)}
               />
             </div>
-            <div className="grid gap-2">
+            <div className="col-span-2 grid gap-2 sm:col-span-1">
               <Label htmlFor="entry-break">Pause (min)</Label>
               <Input
                 id="entry-break"
@@ -169,6 +172,12 @@ export function EntryDialog({
             </div>
           </div>
 
+          {from && to && to <= from && (
+            <p className="-mt-1 text-[13px] text-muted-foreground">
+              Endet am nächsten Tag (über Mitternacht).
+            </p>
+          )}
+
           <div className="grid gap-2">
             <Label htmlFor="entry-note">Notiz (optional)</Label>
             <Input
@@ -179,8 +188,17 @@ export function EntryDialog({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button onClick={save} disabled={busy}>
+        <DialogFooter className="gap-2">
+          {entry && onDelete && (
+            <Button
+              variant="ghost"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive sm:mr-auto md:hidden"
+              onClick={() => onDelete(entry)}
+            >
+              Löschen
+            </Button>
+          )}
+          <Button onClick={save} disabled={busy} className="sm:min-w-32">
             Speichern
           </Button>
         </DialogFooter>

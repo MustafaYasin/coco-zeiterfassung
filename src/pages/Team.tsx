@@ -1,6 +1,7 @@
 import { KeyRound, Plus, ShieldCheck, Trash2, UserRoundX } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useConfirm } from "@/components/ConfirmProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +35,7 @@ type DialogMode =
 
 export function Team() {
   const { member: me } = useAuth();
+  const confirm = useConfirm();
   const [members, setMembers] = useState<Member[]>([]);
   const [mode, setMode] = useState<DialogMode>(null);
   const [username, setUsername] = useState("");
@@ -119,12 +121,13 @@ export function Team() {
   }
 
   async function deactivate(target: Member) {
-    if (
-      !window.confirm(
-        `${target.display_name} deaktivieren? Der Login wird entfernt, alle Zeiten bleiben erhalten.`,
-      )
-    )
-      return;
+    const ok = await confirm({
+      title: `${target.display_name} deaktivieren?`,
+      description:
+        "Der Zugang wird entfernt. Alle Zeiten bleiben erhalten, und du kannst die Person später wieder aktivieren.",
+      action: "Deaktivieren",
+    });
+    if (!ok) return;
     run(
       () => adminAction({ action: "deactivate", member_id: target.id }),
       "Zugang deaktiviert.",
@@ -132,18 +135,21 @@ export function Team() {
   }
 
   async function hardDelete(target: Member) {
-    if (
-      !window.confirm(
-        `${target.display_name} ENDGÜLTIG löschen? Auch alle Zeiteinträge werden gelöscht!`,
-      )
-    )
-      return;
-    if (
-      !window.confirm(
-        "Wirklich sicher? Das kann nicht rückgängig gemacht werden.",
-      )
-    )
-      return;
+    const first = await confirm({
+      title: `${target.display_name} endgültig löschen?`,
+      description:
+        "Damit werden auch alle Zeiteinträge dieser Person gelöscht. Wenn die Zeiten bleiben sollen, wähle stattdessen „Deaktivieren“.",
+      action: "Weiter",
+      destructive: true,
+    });
+    if (!first) return;
+    const second = await confirm({
+      title: "Wirklich sicher?",
+      description: `Alle Zeiten von ${target.display_name} sind danach weg. Das lässt sich nicht rückgängig machen.`,
+      action: "Endgültig löschen",
+      destructive: true,
+    });
+    if (!second) return;
     run(
       () => adminAction({ action: "delete_user", member_id: target.id }),
       "Mitglied gelöscht.",
@@ -152,18 +158,24 @@ export function Team() {
 
   return (
     <div className="grid gap-5">
-      <div className="flex items-center gap-3">
-        <h1 className="font-display text-2xl font-semibold">Team</h1>
-        <Button size="sm" className="ml-auto" onClick={openCreate}>
-          <Plus className="size-4" /> Neuer Zugang
+      <div className="flex flex-wrap items-end gap-4">
+        <div>
+          <h1 className="type-display text-4xl">Team</h1>
+          <p className="mt-1 text-[15px] text-muted-foreground">
+            {members.filter((member) => member.active).length} aktiv,{" "}
+            {members.filter((member) => !member.active).length} ehemalig
+          </p>
+        </div>
+        <Button className="ml-auto" onClick={openCreate}>
+          <Plus className="size-[18px]" /> Neuer Zugang
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-line bg-card">
+      <div className="overflow-x-auto rounded-2xl border border-line bg-card">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
+              <TableHead className="pl-5">Name</TableHead>
               <TableHead>Benutzername</TableHead>
               <TableHead>Status</TableHead>
               <TableHead />
@@ -172,10 +184,10 @@ export function Team() {
           <TableBody>
             {members.map((member) => (
               <TableRow key={member.id}>
-                <TableCell className="font-medium">
+                <TableCell className="pl-5 font-medium">
                   {member.display_name}
                   {member.is_admin && (
-                    <Badge className="ml-2 bg-pine-600">
+                    <Badge className="ml-2 bg-mais-100 text-mais-900">
                       <ShieldCheck className="size-3" /> Admin
                     </Badge>
                   )}
@@ -187,7 +199,9 @@ export function Team() {
                   {member.active ? (
                     <Badge variant="secondary">aktiv</Badge>
                   ) : (
-                    <Badge variant="outline">ehemalig</Badge>
+                    <Badge variant="outline" className="text-muted-foreground">
+                      ehemalig
+                    </Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-right whitespace-nowrap">
@@ -230,10 +244,11 @@ export function Team() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-destructive"
+                      aria-label="Endgültig löschen"
+                      className="text-destructive hover:text-destructive"
                       onClick={() => hardDelete(member)}
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-[18px]" />
                     </Button>
                   )}
                 </TableCell>
@@ -249,7 +264,7 @@ export function Team() {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display">
+            <DialogTitle>
               {mode?.kind === "create" && "Neuer Zugang"}
               {mode?.kind === "password" &&
                 `Passwort für ${mode.member.display_name}`}
@@ -308,12 +323,12 @@ export function Team() {
               />
             </div>
             {mode?.kind === "create" && (
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-3 text-[15px]">
                 <input
                   type="checkbox"
                   checked={isAdmin}
                   onChange={(event) => setIsAdmin(event.target.checked)}
-                  className="size-4 accent-pine-600"
+                  className="size-5 accent-ink"
                 />
                 Admin-Rechte
               </label>

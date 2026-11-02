@@ -1,32 +1,33 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Palette: Mais (gedämpftes Maisgelb, the future COCO colour), Tinte, Grund. */
 :root {
-  --background: #fbfaf9;
-  --foreground: #181b1a;
+  --background: #fbfaf7;
+  --foreground: #1f1c17;
   --card: #ffffff;
-  --card-foreground: #181b1a;
+  --card-foreground: #1f1c17;
   --popover: #ffffff;
-  --popover-foreground: #181b1a;
-  --primary: #2d5339;
-  --primary-foreground: #fbfaf9;
-  --secondary: #eeece8;
-  --secondary-foreground: #181b1a;
-  --muted: #efedea;
-  --muted-foreground: #5f6360;
-  --accent: #dfe9e2;
-  --accent-foreground: #264631;
-  --destructive: #a13d2d;
-  --destructive-foreground: #fbfaf9;
-  --border: #dddad5;
-  --input: #dddad5;
-  --ring: #2d5339;
-  --chart-1: #2d5339;
-  --chart-2: #679478;
-  --chart-3: #94b5a0;
-  --chart-4: #b08d3f;
-  --chart-5: #a8a29b;
-  --radius: 0.7rem;
+  --popover-foreground: #1f1c17;
+  --primary: #1f1c17;
+  --primary-foreground: #fbfaf7;
+  --secondary: #f3f0e8;
+  --secondary-foreground: #1f1c17;
+  --muted: #f3f0e8;
+  --muted-foreground: #6e685d;
+  --accent: #fbf0d3;
+  --accent-foreground: #4f3a10;
+  --destructive: #b3261e;
+  --destructive-foreground: #ffffff;
+  --border: #e7e2d7;
+  --input: #ddd7ca;
+  --ring: #c99a2e;
+  --chart-1: #e9bc52;
+  --chart-2: #1f1c17;
+  --chart-3: #f3dda0;
+  --chart-4: #8c8475;
+  --chart-5: #c99a2e;
+  --radius: 0.875rem;
 }
 
 @theme inline {
@@ -54,25 +55,28 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --color-pine-50: #f2f6f3;
-  --color-pine-100: #dfe9e2;
-  --color-pine-200: #bed3c5;
-  --color-pine-300: #94b5a0;
-  --color-pine-400: #679478;
-  --color-pine-500: #47775a;
-  --color-pine-600: #2d5339;
-  --color-pine-700: #264631;
-  --color-pine-800: #1f3828;
-  --color-pine-900: #182b1f;
-  --color-cream: #fbfaf9;
-  --color-paper: #fdfbf7;
-  --color-sand: #eeece8;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --color-mais-50: #fdf8ec;
+  --color-mais-100: #fbf0d3;
+  --color-mais-200: #f6e2a8;
+  --color-mais-300: #f0cf78;
+  --color-mais-400: #e9bc52;
+  --color-mais-500: #d9a73a;
+  --color-mais-600: #b8872a;
+  --color-mais-700: #8f6720;
+  --color-mais-800: #6b4d1a;
+  --color-mais-900: #4f3a10;
+  --color-ink: #1f1c17;
+  --color-stone: #6e685d;
+  --color-line: #e7e2d7;
+  --color-grund: #fbfaf7;
+  --color-sand: #f3f0e8;
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Playfair Display", Georgia, serif;
+  --radius-xl: calc(var(--radius) + 6px);
+  --radius-2xl: calc(var(--radius) + 14px);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
@@ -81,9 +85,68 @@
   }
   html {
     -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased;
     min-height: 100dvh;
+    font-optical-sizing: auto;
+  }
+  /* In the iPad app the page should feel like an app, not a web page. */
+  .native body {
+    -webkit-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
+  }
+  .native input,
+  .native textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+    letter-spacing: -0.015em;
+  }
+}
+
+@layer utilities {
+  /* Headings: Inter Display cut (opsz 32), tight tracking. */
+  .type-display {
+    font-weight: 650;
+    font-variation-settings: "opsz" 32;
+    letter-spacing: -0.028em;
+  }
+  /* The running clock: large display cut, tabular figures. */
+  .type-clock {
+    font-weight: 600;
+    font-variation-settings: "opsz" 32;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.045em;
+    line-height: 0.9;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component transitions */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component transitions */
+    transition-duration: 0.01ms !important;
   }
 }
